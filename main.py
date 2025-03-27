@@ -26,7 +26,6 @@ def visualize_similarity(similarity_matrix, filenames, threshold=0.5):
             plt.axvline(x=i+0.5, color='red', linestyle='--', linewidth=0.8)
             plt.axhline(y=i+0.5, color='red', linestyle='--', linewidth=0.8)
 
-    # Configure plot
     plt.title("Document Similarity Matrix\n(Red lines = Cluster Boundaries)")
     plt.xlabel("Document Index")
     plt.ylabel("Document Index")
@@ -81,7 +80,7 @@ def parse_html(file_path):
     return text, tag_str, css_str
 
 def compute_similarities(texts, tags, css, weights=(0.4, 0.3, 0.3)):
-    # Vectorize each feature with dtype=np.float32
+    # Vectorize each feature 
     text_vec = TfidfVectorizer(stop_words="english", dtype=np.float32).fit_transform(texts) * weights[0]
     tag_vec = TfidfVectorizer(ngram_range=(2, 2), dtype=np.float32).fit_transform(tags) * weights[1]
     css_vec = TfidfVectorizer(dtype=np.float32).fit_transform(css) * weights[2]
@@ -136,7 +135,7 @@ def clean_transformed_files(directory):
         if f.startswith('transformed_') and f.endswith('.html'):
             os.remove(os.path.join(directory, f))
 
-def main(directory, weights=(0.4, 0.3, 0.3), threshold=0.5):
+def main(directory, weights=(0.4, 0.3, 0.3), threshold=0.5, output_filename='groups.txt', multiple = 0):
     # Clean up any existing transformed files first
     clean_transformed_files(directory)
     
@@ -145,11 +144,16 @@ def main(directory, weights=(0.4, 0.3, 0.3), threshold=0.5):
         return []
     
     combined_sim = compute_similarities(texts, tag_seqs, css_seqs, weights)
-    
-    visualize_similarity(combined_sim, filenames, threshold)
 
     clusters = cluster_files(combined_sim, threshold)
     grouped = group_files(filenames, clusters)
+
+    if multiple == 0:
+        with open(output_filename, 'w') as out_file:
+            for group in grouped:
+                out_file.write("[" + ", ".join(group) + "]")
+                if group != grouped[-1]:
+                    out_file.write(", ")
     return grouped
 
 def process_subdirectories(root_directory, output_filename='groups_all.txt'):
@@ -161,18 +165,29 @@ def process_subdirectories(root_directory, output_filename='groups_all.txt'):
                 # Clean up before processing
                 clean_transformed_files(folder_path)
                 
-                groups = main(folder_path)
+                groups = main(folder_path, multiple=1)
                 out_file.write(f"Folder: {folder}\n")
                 if groups:
                     for group in groups:
-                        out_file.write("[" + ", ".join(group) + "]\n")
-                else:
-                    out_file.write("No HTML files found or no groups.\n")
+                        out_file.write("[" + ", ".join(group) + "]")
+                        if group != groups[-1]:
+                            out_file.write(", ")
                 out_file.write("\n")
                 print(f"Processed folder: {folder}")
 
-# Example usage
 if __name__ == "__main__":
-    # Set the root directory that contains multiple folders with HTML files
-    root_directory = r"D:\Projects\HTMLClones\clones"  # Replace with your actual directory
-    process_subdirectories(root_directory)
+    root_directory = r"clones"  
+    
+    print("Choose the processing mode:")
+    print("1: Process all subdirectories")
+    print("2: Process a specific subdirectory (e.g., tier1, tier2, tier3, tier4)")
+    choice = input("Enter 1 or 2: ").strip()
+
+    
+    if choice == '1':
+        process_subdirectories(root_directory)
+    elif choice == '2':
+        subdir_name = input("Enter the subdirectory name (e.g., tier1, tier2, tier3, tier4): ").strip()
+        subdir_path = os.path.join(root_directory, subdir_name)
+        if os.path.isdir(subdir_path):
+            main(subdir_path)
