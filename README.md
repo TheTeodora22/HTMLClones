@@ -59,19 +59,19 @@ He are the matrices for each tier of documents:
 
 Tier 1:
 
-![Alt text](.\PozeClone\tier1.png)
+![Alt text](https://github.com/TheTeodora22/HTMLClones/blob/main/PozeClone/tier1.png)
 
 Tier 2:
 
-![Alt text](.\PozeClone\tier2.png)
+![Alt text](https://github.com/TheTeodora22/HTMLClones/blob/main/PozeClone/tier2.png)
 
 Tier 3:
 
-![Alt text](.\PozeClone\tier3.png)
+![Alt text](https://github.com/TheTeodora22/HTMLClones/blob/main/PozeClone/tier3.png)
 
 Tier 4:
 
-![Alt text](.\PozeClone\tier4.png)
+![Alt text](https://github.com/TheTeodora22/HTMLClones/blob/main/PozeClone/tier4.png)
 
 ### Clustering
 
