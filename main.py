@@ -4,6 +4,37 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import AgglomerativeClustering
 import numpy as np
+from scipy.sparse import hstack
+import matplotlib.pyplot as plt
+
+
+def visualize_similarity(similarity_matrix, filenames, threshold=0.5):
+    plt.figure(figsize=(10, 8))
+    
+    # Create heatmap
+    im = plt.imshow(similarity_matrix, cmap='viridis', 
+                    origin='upper', aspect='auto')
+    
+    # Add colorbar
+    cbar = plt.colorbar(im)
+    cbar.set_label('Similarity Score')
+
+    # Add cluster separation lines
+    n = similarity_matrix.shape[0]
+    for i in range(n-1):
+        if similarity_matrix[i,i+1] < threshold:
+            plt.axvline(x=i+0.5, color='red', linestyle='--', linewidth=0.8)
+            plt.axhline(y=i+0.5, color='red', linestyle='--', linewidth=0.8)
+
+    # Configure plot
+    plt.title("Document Similarity Matrix\n(Red lines = Cluster Boundaries)")
+    plt.xlabel("Document Index")
+    plt.ylabel("Document Index")
+    plt.xticks(np.arange(len(filenames)), fontsize=4, rotation=90)
+    plt.yticks(np.arange(len(filenames)), filenames, fontsize=4)
+    
+    plt.tight_layout()
+    plt.show()
 
 def parse_html(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -16,7 +47,7 @@ def parse_html(file_path):
         css = style_tag.get_text()
         css = ' '.join(css.split()).lower()
         css_contents.append(css)
-        style_tag.decompose()  # Remove from DOM but keep content
+        style_tag.decompose()  
     
     # Remove scripts
     for script in soup.find_all('script'):
@@ -50,27 +81,23 @@ def parse_html(file_path):
     return text, tag_str, css_str
 
 def compute_similarities(texts, tags, css, weights=(0.4, 0.3, 0.3)):
-    # Text similarity
-    text_vec = TfidfVectorizer(stop_words='english').fit_transform(texts)
-    text_sim = cosine_similarity(text_vec)
+    # Vectorize each feature with dtype=np.float32
+    text_vec = TfidfVectorizer(stop_words="english", dtype=np.float32).fit_transform(texts) * weights[0]
+    tag_vec = TfidfVectorizer(ngram_range=(2, 2), dtype=np.float32).fit_transform(tags) * weights[1]
+    css_vec = TfidfVectorizer(dtype=np.float32).fit_transform(css) * weights[2]
     
-    # Tag structure similarity
-    tag_vec = TfidfVectorizer(ngram_range=(2, 2)).fit_transform(tags)
-    tag_sim = cosine_similarity(tag_vec)
+    # Combine features horizontally (sparse matrices)
+    combined_features = hstack([text_vec, tag_vec, css_vec])
     
-    # CSS similarity
-    css_vec = TfidfVectorizer().fit_transform(css)
-    css_sim = cosine_similarity(css_vec)
-    
-    # Weighted combination
-    return (weights[0]*text_sim + weights[1]*tag_sim + weights[2]*css_sim) / sum(weights)
+    # Single similarity calculation
+    return cosine_similarity(combined_features)
 
 def process_directory(directory):
     files = sorted([os.path.join(directory, f) 
                     for f in os.listdir(directory) if f.endswith('.html')])
     texts = []
     tag_seqs = []
-    css_seqs = []  # NEW: CSS container
+    css_seqs = []  
     filenames = []
     
     for file_path in files:
@@ -104,26 +131,36 @@ def group_files(filenames, clusters):
     sorted_groups = sorted(groups.values(), key=lambda x: (len(x), x))
     return sorted_groups
 
+def clean_transformed_files(directory):
+    for f in os.listdir(directory):
+        if f.startswith('transformed_') and f.endswith('.html'):
+            os.remove(os.path.join(directory, f))
+
 def main(directory, weights=(0.4, 0.3, 0.3), threshold=0.5):
+    # Clean up any existing transformed files first
+    clean_transformed_files(directory)
+    
     filenames, texts, tag_seqs, css_seqs = process_directory(directory)
     if not filenames:
         return []
     
     combined_sim = compute_similarities(texts, tag_seqs, css_seqs, weights)
+    
+    visualize_similarity(combined_sim, filenames, threshold)
+
     clusters = cluster_files(combined_sim, threshold)
     grouped = group_files(filenames, clusters)
     return grouped
 
 def process_subdirectories(root_directory, output_filename='groups_all.txt'):
-    """
-    Iterates through each subfolder in the root_directory.
-    For each subfolder, it applies the clustering algorithm and writes the groupings to the output file.
-    """
     with open(output_filename, 'w') as out_file:
         # Iterate over each item in the root_directory
         for folder in sorted(os.listdir(root_directory)):
             folder_path = os.path.join(root_directory, folder)
             if os.path.isdir(folder_path):
+                # Clean up before processing
+                clean_transformed_files(folder_path)
+                
                 groups = main(folder_path)
                 out_file.write(f"Folder: {folder}\n")
                 if groups:
@@ -137,5 +174,5 @@ def process_subdirectories(root_directory, output_filename='groups_all.txt'):
 # Example usage
 if __name__ == "__main__":
     # Set the root directory that contains multiple folders with HTML files
-    root_directory = r"D:\Projects\HTMLCLONES\clones"  # Replace with your actual directory
+    root_directory = r"D:\Projects\HTMLClones\clones"  # Replace with your actual directory
     process_subdirectories(root_directory)
