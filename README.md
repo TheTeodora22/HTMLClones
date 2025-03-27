@@ -1,6 +1,6 @@
-# HTML Clones
+# HTML Clones 💻
 
-## Introduction
+## Introduction 
 
 We have a dataset with 4 subdirectories in increasing complexity
 
@@ -20,10 +20,18 @@ Frameworks & Libraries:
 + BeautifulSoup - to parse the HTML documents
 + Scikit-learn - ML algorithms
 + Matplotlib - create Heatmaps
++ Scipy
 + Numpy 
 + Os
 
-## Solution
+## Dependencies
+
+Install dependencies:
+
+        pip install beautifulsoup4 scikit-learn matplotlib scipy numpy
+
+
+## Solution 
 
 ### Reading the data
 
@@ -55,7 +63,7 @@ Simple word counts don't highlight the special, unique words, because they inclu
 
 Applying this function to each text type lists, we get matrices that will be useful in our next calculations.
 
-### Cosine Similarity
+### Cosine Similarity 
 
 The three matrices, previously calculated, are combined into one by horizontally stacking them, in order to not apply the same function three times.
 
@@ -69,7 +77,8 @@ We call the function "cosine_similarity()" from the sklearn library, to see how 
 
 The result is a matrix of similarities. The numbers are between 0 and 1, with 0 being not similar at all and 1 being the exact same copy.
 
-He are the matrices for each tier of documents:
+📊
+He are the heatmaps based on the matrices for each tier of documents:
 
 Tier 1:
 
@@ -87,7 +96,7 @@ Tier 4:
 
 ![Alt text](https://github.com/TheTeodora22/HTMLClones/blob/main/PozeClone/tier4.png)
 
-### Clustering
+### Clustering 
 
 **Why** *Agglomerative Clustering*?
 
