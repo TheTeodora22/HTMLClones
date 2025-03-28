@@ -15,21 +15,40 @@ The subdirectories contain HTML documents.  We want to group them together based
 
 Programming language chosen: Python
 
-Frameworks & Libraries:
+Libraries used:
 
 + BeautifulSoup - to parse the HTML documents
 + Scikit-learn - ML algorithms
 + Matplotlib - create Heatmaps
++ Re - regular expressions
 + Scipy
 + Numpy 
 + Os
 
 ## Dependencies
 
+### Prerequisites
+
+Python 3.x must be installed on your system
+
 Install dependencies:
 
         pip install beautifulsoup4 scikit-learn matplotlib scipy numpy
 
+## How to Run
+
++ Open your terminal
+
++ Run the script by executing:
+
+```bash
+python main.py
+```
++ Upon execution, you will be prompted to choose a processing mode:
+    -  Enter 1 to process all subdirectories under the root directory.
+    - Enter 2 to process a specific subdirectory (e.g., tier1, tier2, etc.).
+
++ The script will generate output files (groups.txt or groups_all.txt) that list the clustered groups of HTML files.
 
 ## Solution 
 
@@ -37,7 +56,7 @@ Install dependencies:
 
 Using OS library, all files ending in ".html" are read from each directory sequentally and the files are then processed.
 
-### Pre-processing text
+### Preprocessing text
 
 + clean any meta-tags that don't influence appearance
 
@@ -47,7 +66,7 @@ Using OS library, all files ending in ".html" are read from each directory seque
 
 + parse the CSS style
 
-+ to all of these, added style, text and tags found in the script section
++ added style elements found in the script section
 
 All the extracted texts are grouped in lists, according to their type.
 
@@ -149,6 +168,10 @@ Folder: tier4
 
 ## Problems and possible improvements
 
+#### Script-generated HTML
+
+The current implementation parses the static HTML content as-is. If the entire HTML structure is generated dynamically in the script section , the parser may not capture the resulting DOM correctly. 
+
 #### Computational Efficiency
 
 + Redundant Processing:
@@ -179,6 +202,8 @@ Folder: tier4
 + https://scikit-learn.org/stable/user_guide.html
 
 + https://www.geeksforgeeks.org/understanding-tf-idf-term-frequency-inverse-document-frequency/
+
++ https://memgraph.com/blog/cosine-similarity-python-scikit-learn
 
 + https://alvarotrigo.com/blog/change-css-javascript/
 

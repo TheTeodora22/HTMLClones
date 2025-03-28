@@ -6,6 +6,7 @@ from sklearn.cluster import AgglomerativeClustering
 import numpy as np
 from scipy.sparse import hstack
 import matplotlib.pyplot as plt
+import re
 
 
 def visualize_similarity(similarity_matrix, filenames, threshold=0.5):
@@ -34,7 +35,10 @@ def visualize_similarity(similarity_matrix, filenames, threshold=0.5):
     
     plt.tight_layout()
     plt.show()
-
+def camel_to_kebab(name):
+    # Convert camelCase to kebab-case.
+    s = re.sub(r'(?<!^)(?=[A-Z])', '-', name).lower()
+    return s
 
 def parse_html(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -43,15 +47,65 @@ def parse_html(file_path):
     
     # Extract CSS from <style> tags 
     css_contents = []
+    additional_css = []
     for style_tag in soup.find_all('style'):
         css = style_tag.get_text()
         css = ' '.join(css.split()).lower()
         css_contents.append(css)
         style_tag.decompose()  
     
-    # Remove scripts
-    for script in soup.find_all('script'):
-        script.decompose()
+
+    # Regex Patterns:
+
+    # 1. Direct assignment: element.style.property = 'value';
+    pattern_direct = re.compile(r"\.style\.([a-zA-Z]+)\s*=\s*['\"]([^'\"]+)['\"]")
+    # 2. Using cssText assignment: element.style.cssText = `...` or "..."
+    pattern_cssText = re.compile(r"\.style\.cssText\s*=\s*([`'\"])(.*?)\1", re.DOTALL)
+    # 3. Using setProperty: element.style.setProperty('property', 'value'[, ...]);
+    pattern_setProperty = re.compile(r"\.style\.setProperty\(\s*['\"]([^'\"]+)['\"]\s*,\s*['\"]([^'\"]+)['\"]")
+    # 4. Capture a template literal definition assigned to a variable.
+    pattern_template_literal = re.compile(r"const\s+(\w+)\s*=\s*`([^`]+)`", re.DOTALL)
+    
+    # Store any template literals for later lookup.
+    template_literals = {}
+
+    for script_tag in soup.find_all('script'):
+        script_text = script_tag.get_text()
+        for var, content in re.findall(pattern_template_literal, script_text):
+            # Clean up the extracted CSS content.
+            cleaned = ' '.join(content.split()).lower()
+            template_literals[var] = cleaned
+
+    for script_tag in soup.find_all('script'):
+        script_text = script_tag.get_text()
+
+        # 1. Process direct inline style assignments.
+        for match in re.finditer(pattern_direct, script_text):
+            prop, value = match.groups()
+            # Convert property from camelCase to kebab-case.
+            prop_kebab = camel_to_kebab(prop)
+            # Build a CSS declaration string.
+            rule = f"{prop_kebab}: {value};"
+            additional_css.append(rule)
+        
+        # 2. Process cssText assignments.
+        for match in re.finditer(pattern_cssText, script_text):
+            delimiter, content = match.groups()
+            # Check if content is a reference to a template literal variable.
+            if content.strip() in template_literals:
+                rule = template_literals[content.strip()]
+            else:
+                rule = ' '.join(content.split()).lower()
+            additional_css.append(rule)
+        
+        # 3. Process setProperty calls.
+        for match in re.finditer(pattern_setProperty, script_text):
+            prop, value = match.groups()
+            rule = f"{prop}: {value};"
+            additional_css.append(rule)
+        
+        # Remove the script tag after processing.
+        script_tag.decompose()
     
     # Extract visible text
     text = soup.get_text()
@@ -76,7 +130,7 @@ def parse_html(file_path):
         for tag in soup.find_all(style=True)
         if tag.has_attr('style')
     ]
-    css_str = ' '.join(css_contents + inline_styles)
+    css_str = ' '.join(css_contents + inline_styles + additional_css)
     
     return text, tag_str, css_str
 
