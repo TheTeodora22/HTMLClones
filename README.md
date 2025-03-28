@@ -66,6 +66,8 @@ Using OS library, all files ending in ".html" are read from each directory seque
 
 + parse the CSS style
 
++ added inline style elements
+
 + added style elements found in the script section
 
 All the extracted texts are grouped in lists, according to their type.
