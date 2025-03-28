@@ -35,12 +35,13 @@ def visualize_similarity(similarity_matrix, filenames, threshold=0.5):
     plt.tight_layout()
     plt.show()
 
+
 def parse_html(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
         html = f.read()
     soup = BeautifulSoup(html, 'html.parser')
     
-    # Extract CSS from <style> tags before removal
+    # Extract CSS from <style> tags 
     css_contents = []
     for style_tag in soup.find_all('style'):
         css = style_tag.get_text()
@@ -130,14 +131,7 @@ def group_files(filenames, clusters):
     sorted_groups = sorted(groups.values(), key=lambda x: (len(x), x))
     return sorted_groups
 
-def clean_transformed_files(directory):
-    for f in os.listdir(directory):
-        if f.startswith('transformed_') and f.endswith('.html'):
-            os.remove(os.path.join(directory, f))
-
 def main(directory, weights=(0.4, 0.3, 0.3), threshold=0.5, output_filename='groups.txt', multiple = 0):
-    # Clean up any existing transformed files first
-    clean_transformed_files(directory)
     
     filenames, texts, tag_seqs, css_seqs = process_directory(directory)
     if not filenames:
@@ -162,9 +156,6 @@ def process_subdirectories(root_directory, output_filename='groups_all.txt'):
         for folder in sorted(os.listdir(root_directory)):
             folder_path = os.path.join(root_directory, folder)
             if os.path.isdir(folder_path):
-                # Clean up before processing
-                clean_transformed_files(folder_path)
-                
                 groups = main(folder_path, multiple=1)
                 out_file.write(f"Folder: {folder}\n")
                 if groups:
